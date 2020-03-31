@@ -130,3 +130,4 @@ If you encounter any issues or have questions about this project, feel free to [
 
 # License
 This project was developed by Scott Lawson and is released under the MIT License.
+https://github.com/scottlawsonbc/audio-reactive-led-strip
