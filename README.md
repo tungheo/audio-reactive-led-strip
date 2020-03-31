@@ -23,53 +23,28 @@ The repository includes everything needed to build an LED strip music visualizer
 # What do I need to make one?
 ## Computer + ESP8266
 To build a visualizer using a computer and ESP8266, you will need:
-- Computer with Python 2.7 or 3.5 ([Anaconda](https://www.continuum.io/downloads) is recommended on Windows)
+- Computer with Python 2.7.17
 - ESP8266 module with RX1 pin exposed. These modules can be purchased for as little as $5 USD. These modules are known to be compatible, but many others will work too:
-  - NodeMCU v3
+  - NodeMCU v3 , esp 01. esp 12
   - Adafruit HUZZAH
   - Adafruit Feather HUZZAH
-- WS2812B LED strip (such as Adafruit Neopixels). These can be purchased for as little as $5-15 USD per meter.
+- WS2812B LED strip (such as Adafruit Neopixels).
 - 5V power supply
 - 3.3V-5V level shifter (optional, must be non-inverting)
 
 Limitations when using a computer + ESP8266:
 - The communication protocol between the computer and ESP8266 currently supports a maximum of 256 LEDs.
 
-## Standalone Raspberry Pi
-You can also build a standalone visualizer using a Raspberry Pi. For this you will need: 
-- Raspberry Pi (1, 2, or 3)
-- USB audio input device. This could be a USB microphone or a sound card. You just need to find some way of giving the Raspberry Pi audio input.
-- WS2812B LED strip (such as Adafruit Neopixels)
-- 5V power supply
-- 3.3V-5V level shifter (optional)
-
-Limitations when using the Raspberry Pi:
-- Raspberry Pi is just fast enough the run the visualization, but it is too slow to run the GUI window as well. It is recommended that you disable the GUI when running the code on the Raspberry Pi.
-- The ESP8266 uses a technique called temporal dithering to improve the color depth of the LED strip. Unfortunately the Raspberry Pi lacks this capability.
 
 # Installation for Computer + ESP8266
 ## Python Dependencies
-Visualization code is compatible with Python 2.7 or 3.5. A few Python dependencies must also be installed:
+Visualization code is compatible with Python 2.7.17
 - Numpy
 - Scipy (for digital signal processing)
 - PyQtGraph (for GUI visualization)
 - PyAudio (for recording audio with microphone)
 
-On Windows machines, the use of [Anaconda](https://www.continuum.io/downloads) is **highly recommended**. Anaconda simplifies the installation of Python dependencies, which is sometimes difficult on Windows.
-
-### Installing dependencies with Anaconda
-Create a [conda virtual environment](http://conda.pydata.org/docs/using/envs.html) (this step is optional but recommended)
-```
-conda create --name visualization-env python=3.5
-activate visualization-env
-```
-Install dependencies using pip and the conda package manager
-```
-conda install numpy scipy pyqtgraph
-pip install pyaudio
-```
-
-### Installing dependencies without Anaconda
+### Installing dependencies
 The pip package manager can also be used to install the python dependencies.
 ```
 pip install numpy
@@ -95,18 +70,6 @@ For the NodeMCU v3 and Adafruit Feather HUZZAH, the location of the RX1 pin is s
 ![nodemcu-pinout](images/NodeMCUv3-small.png)
 ![feather-huzzah-pinout](images/FeatherHuzzah-small.png)
 
-### Raspberry Pi
-Since the Raspberry Pi is a 3.3V device, the best practice is to use a logic level converter to shift the 3.3V logic to 5V logic (WS2812 LEDs use 5V logic). There is a good overview on the [best practices here](https://learn.adafruit.com/adafruit-neopixel-uberguide/best-practices).
-
-Although a logic level converter is the best practice, sometimes it will still work if you simply connect the LED strip directly to the Raspberry Pi.
-
-You cannot power the LED strip using the Raspberry Pi GPIO pins, you need to have an external 5V power supply.
-
-The connections are:
-
-* Connect GND on the power supply to GND on the LED strip and GND on the Raspberry Pi (they MUST share a common GND connection)
-* Connect +5V on the power supply to +5V on the LED strip
-* Connect a PWM GPIO pin on the Raspberry Pi to the data pin on the LED strip. If using the Raspberry Pi 2 or 3, then try Pin 18(GPIO5).
 
 # Setup and Configuration
 1. Install Python and Python dependencies
@@ -125,79 +88,10 @@ The connections are:
   - Set `UDP_IP` to the IP address of your ESP8266 (must match `ip` in [ws2812_controller.ino](arduino/ws2812_controller/ws2812_controller.ino))
   - If needed, set `MIC_RATE` to your microphone sampling rate in Hz. Most of the time you will not need to change this.
 
-# Installation for Raspberry Pi
-If you encounter any problems running the visualization on a Raspberry Pi, please [open a new issue](https://github.com/scottlawsonbc/audio-reactive-led-strip/issues). Also, please consider opening an issue if you have any questions or suggestions for improving the installation process.
-
-Download and extract all of the files in this repository onto your pi to begin.
-
-## Installing the Python dependencies
-Install python dependencies using apt-get
-```
-sudo apt-get update
-sudo apt-get install python-numpy python-scipy python-pyaudio
-```
-
-## Install ws281x library
-To install the ws281x library I recommend following this [Adafruit tutorial](https://learn.adafruit.com/neopixels-on-raspberry-pi/software).
-```
-sudo apt-get install build-essential python-dev git scons swig
-git clone https://github.com/jgarff/rpi_ws281x.git
-cd rpi_ws281x
-scons
-cd python
-sudo python setup.py install
-```
-
-## Audio device configuration
-For the Raspberry Pi, a USB audio device needs to be configured as the default audio device.
-
-Create/edit `/etc/asound.conf`
-```
-sudo nano /etc/asound.conf
-```
-Set the file to the following text
-```
-pcm.!default {
-    type hw
-    card 1
-}
-ctl.!default {
-    type hw
-    card 1
-}
-```
-
-Next, set the USB device to as the default device by editing `/usr/share/alsa/alsa.conf`
-```
-sudo nano /usr/share/alsa/alsa.conf:
-```
-Change
-```
-defaults.ctl.card 0
-defaults.pcm.card 0
-```
-To
-```
-defaults.ctl.card 1
-defaults.pcm.card 1
-```
-
-## Test the LED strip
-1. cd rpi_ws281x/python/examples
-2. sudo nano strandtest.py
-3. Configure the options at the top of the file. Enable logic inverting if you are using an inverting logic-level converter. Set the correct GPIO pin and number of pixels for the LED strip. You will likely need a logic-level converter to convert the Raspberry Pi's 3.3V logic to the 5V logic used by the ws2812b LED strip.
-4. Run example with 'sudo python strandtest.py'
-
-## Configure the visualization code
-In `config.py`, set the device to `'pi'` and configure the GPIO, LED and other hardware settings.
-If you are using an inverting logic level converter, set `LED_INVERT = True` in `config.py`. Set `LED_INVERT = False` if you are not using an inverting logic level converter (i.e. connecting LED strip directly to GPIO pin).
 
 # Audio Input
 The visualization program streams audio from the default audio input device (set by the operating system). Windows users can change the audio input device by [following these instructions](http://blogs.creighton.edu/bluecast/tips-and-tricks/set-the-default-microphone-and-adjust-the-input-volume-in-windows-7/).
 
-Examples of typical audio sources:
-* Audio cable connected to the audio input jack (requires USB sound card on Raspberry Pi)
-* Webcam microphone, headset, studio recording microphone, etc
 
 ## Virtual Audio Source
 You can use a "virtual audio device" to transfer audio playback from one application to another. This means that you can play music on your computer and connect the playback directly into the visualization program.
